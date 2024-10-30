@@ -1,10 +1,12 @@
 const express = require("express");
 const { connectDB } = require("./config/database");
+const cookieParser = require("cookie-parser");
 const User = require("./models/user");
 
 const app = express();
 
 app.use(express.json());
+app.use(cookieParser());
 
 app.get("/user", async (req, res) => {
   const email = req?.body?.emailId;
