@@ -2,6 +2,10 @@ const express = require("express");
 const { connectDB } = require("./config/database");
 const cookieParser = require("cookie-parser");
 const User = require("./models/user");
+const {
+  validateSignupData,
+  validateEditProfileData,
+} = require("./utils/validation");
 
 const app = express();
 
@@ -36,13 +40,14 @@ app.get("/users", async (req, res) => {
 });
 
 app.post("/signup", async (req, res) => {
+  validateSignupData(req);
   const user = new User(req?.body);
 
   try {
     await user.save();
-    res.send("User Info added successfully");
+    res.json({ message: "User Info added successfully" });
   } catch (err) {
-    res.status(400).send("Unable to save the user: ", err.message);
+    res.status(400).send("Unable to save the user: " + err.message);
   }
 });
 
@@ -52,8 +57,11 @@ app.patch("/user", async (req, res) => {
 
   try {
     // await User.findByIdAndUpdate(userId, req?.body);
+    if (!validateEditProfileData(req)) {
+      throw new Error("Invalid Edit Request");
+    }
     await User.findOneAndUpdate({ emailId: emailId }, req?.body);
-    res?.send("User Info updated successfully");
+    res?.json({ message: "User Info updated successfully" });
   } catch (err) {
     res.status(400).send("Something went wrong");
   }
