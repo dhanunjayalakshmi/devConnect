@@ -7,6 +7,9 @@ const {
   validateEditProfileData,
 } = require("./utils/validation");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+
+require("dotenv").config();
 
 const app = express();
 
@@ -14,17 +17,36 @@ app.use(express.json());
 app.use(cookieParser());
 
 app.get("/user", async (req, res) => {
-  const email = req?.body?.emailId;
   try {
-    const user = await User.find({ emailId: email });
-    if (user?.length > 0) {
-      res?.send(user);
-    } else {
+    const { token } = req?.cookies;
+
+    if (!token) {
+      res.status(401).send("Please Login");
+    }
+
+    const user = await jwt.verify(token, process.env.SECRET_JWT_TOKEN);
+
+    const { _id } = user;
+
+    const loggedInUser = await User.findById(_id);
+
+    if (!loggedInUser) {
       res.send("User not found");
     }
+
+    req.user = loggedInUser;
+
+    res.send(loggedInUser);
   } catch (err) {
     res.status(400).send("Something went wrong");
   }
+  // try {
+  //   console.log(req);
+  //   const loggedInUser = req?.user;
+  //   res.send(loggedInUser);
+  // } catch (err) {
+  //   res.status(400).send("Error: " + err.message);
+  // }
 });
 
 app.get("/users", async (req, res) => {
@@ -74,10 +96,19 @@ app.post("/login", async (req, res) => {
     const hashedPassword = user?.password;
     const isPasswordValid = await bcrypt.compare(password, hashedPassword);
 
-    if (!isPasswordValid) {
+    if (isPasswordValid) {
+      const token = jwt.sign({ _id: user?._id }, process.env.SECRET_JWT_TOKEN, {
+        expiresIn: "7d",
+      });
+
+      res.cookie("token", token, {
+        expires: new Date(Date.now() + 8 * 3600000),
+      });
+
+      res.send(user);
+    } else {
       throw new Error("Invalid Credentials");
     }
-    res.send(user);
   } catch (err) {
     res.status(400).send("Error: " + err.message);
   }
