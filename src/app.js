@@ -2,6 +2,7 @@ const express = require("express");
 const { connectDB } = require("./config/database");
 const cookieParser = require("cookie-parser");
 const User = require("./models/user");
+const { userAuth } = require("./middlewares/auth");
 const {
   validateSignupData,
   validateEditProfileData,
@@ -16,37 +17,13 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 
-app.get("/user", async (req, res) => {
+app.get("/user", userAuth, async (req, res) => {
   try {
-    const { token } = req?.cookies;
-
-    if (!token) {
-      res.status(401).send("Please Login");
-    }
-
-    const user = await jwt.verify(token, process.env.SECRET_JWT_TOKEN);
-
-    const { _id } = user;
-
-    const loggedInUser = await User.findById(_id);
-
-    if (!loggedInUser) {
-      res.send("User not found");
-    }
-
-    req.user = loggedInUser;
-
+    const loggedInUser = req?.user;
     res.send(loggedInUser);
   } catch (err) {
-    res.status(400).send("Something went wrong");
+    res.status(400).send("Error: " + err.message);
   }
-  // try {
-  //   console.log(req);
-  //   const loggedInUser = req?.user;
-  //   res.send(loggedInUser);
-  // } catch (err) {
-  //   res.status(400).send("Error: " + err.message);
-  // }
 });
 
 app.get("/users", async (req, res) => {
