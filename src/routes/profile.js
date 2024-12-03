@@ -16,31 +16,34 @@ profileRouter.get("/profile/view", userAuth, async (req, res) => {
 });
 
 profileRouter.patch("/profile/edit", userAuth, async (req, res) => {
-  const emailId = req?.body?.emailId;
-
   try {
     if (!validateEditProfileData(req)) {
       throw new Error("Invalid Edit Request");
     }
-    await User.findOneAndUpdate({ emailId: emailId }, req?.body);
-    res?.json({ message: "User Info updated successfully" });
+    const loggedInUser = req?.user;
+    Object.keys(req?.body).forEach(
+      (key) => (loggedInUser[key] = req?.body[key])
+    );
+    await loggedInUser.save();
+    res?.json({
+      message: `${loggedInUser.firstName}, Your profile has been updated successfully.`,
+      data: loggedInUser,
+    });
   } catch (err) {
-    res.status(400).send("Something went wrong");
+    res.status(400).send("Error: " + err.message);
   }
 });
 
 profileRouter.delete("/profile/delete", userAuth, async (req, res) => {
-  const emailId = req?.body?.emailId;
   try {
-    const user = await User.findOneAndDelete({ emailId: emailId });
-
-    if (user) {
-      res?.send("User deleted successfully");
-    } else {
-      res.send("User not found");
-    }
+    const loggedInUser = req?.user;
+    await User.findByIdAndDelete(loggedInUser._id);
+    res?.cookie("token", null, {
+      expires: new Date(Date.now()),
+    });
+    res?.send("Your account is deleted. Thank you for your journey with us.");
   } catch (err) {
-    res.status(400).send("Something went wrong");
+    res?.status(400).send("Error : " + err.message);
   }
 });
 

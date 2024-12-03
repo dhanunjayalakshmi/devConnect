@@ -23,7 +23,7 @@ const validateEditProfileData = (req) => {
     "skills",
   ];
 
-  const isEditAllowed = Object.keys(req.body).every((field) =>
+  const isEditAllowed = Object.keys(req?.body).every((field) =>
     allowedEditFields.includes(field)
   );
 
