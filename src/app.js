@@ -53,8 +53,14 @@ app.post("/signup", async (req, res) => {
   });
 
   try {
-    await user.save();
-    res.json({ message: "User Info added successfully" });
+    const savedUser = await user.save();
+    const token = await savedUser.getJWT();
+
+    res.cookie("token", token, {
+      expires: new Date(Date.now() + 8 * 3600000),
+    });
+
+    res.json({ message: "User Info added successfully", data: savedUser });
   } catch (err) {
     res.status(400).send("Unable to save the user: " + err.message);
   }
@@ -74,9 +80,7 @@ app.post("/login", async (req, res) => {
     const isPasswordValid = await bcrypt.compare(password, hashedPassword);
 
     if (isPasswordValid) {
-      const token = jwt.sign({ _id: user?._id }, process.env.SECRET_JWT_TOKEN, {
-        expiresIn: "7d",
-      });
+      const token = user.getJWT();
 
       res.cookie("token", token, {
         expires: new Date(Date.now() + 8 * 3600000),
