@@ -19,7 +19,7 @@ requestRouter.post(
       if (!allowedStatus.includes(status)) {
         return res
           .status(401)
-          .json({ message: "Invalid status type" + status });
+          .json({ message: "Invalid status type " + status });
       }
 
       const toUser = await User.findById(toUserId);
@@ -57,3 +57,5 @@ requestRouter.post(
     }
   }
 );
+
+module.exports = requestRouter;
